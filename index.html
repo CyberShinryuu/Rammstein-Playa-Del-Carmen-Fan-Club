@@ -658,7 +658,7 @@
         <div class="cred-actions" id="csvActions" style="margin-top:16px">
           <button class="btn-outline" type="button" id="dlCsv">⬇ Descargar registro (CSV)</button>
         </div>
-        <p class="form-note" style="margin-top:12px">La lista se guarda en este navegador y cada registro se envía también a la hoja de Google Sheets del club. Con «Descargar registro (CSV)» bajas el archivo para abrirlo en Excel.</p>
+        <p class="form-note" style="margin-top:12px">La lista de miembros se carga desde la hoja central de Google Sheets del club, así todos los navegadores ven la misma; también queda una copia en este navegador como respaldo y cada registro nuevo se envía a esa hoja. Con «Descargar registro (CSV)» bajas el archivo para abrirlo en Excel.</p>
       </div>
     </div>
   </section>
@@ -863,10 +863,12 @@
   });
 
   /* ---------- Registro de fans — Google Sheets + este navegador ----------
-     Igual que en el diseno nuevo: cada registro se guarda en
-     localStorage (misma clave y mismo formato, para que la lista no
-     se borre al recargar) y se envia a la hoja central de Google
-     Sheets del club por la web app de Apps Script. */
+     Cada registro se guarda en localStorage (misma clave y mismo
+     formato) y se envia a la hoja central de Google Sheets del club
+     por la web app de Apps Script. Al abrir, la lista de miembros
+     se carga de esa misma hoja (GET a SHEETS_ENDPOINT), para que
+     todos los navegadores vean la misma lista; la copia de este
+     navegador queda solo como respaldo si la hoja no responde. */
   var SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbyi_i9-Bce4MzYD-_QGLbZQ3uH-6JuXYfZNkx1HWFkFrhEsJ6Iy-ukYTe4RXRTeJXmrIw/exec";
   var STORAGE_KEY = "rammstein-fan-club-playa-miembros-v1";
   function fechaStrHoy(){
@@ -960,6 +962,67 @@
       });
     });
   }
+  /* ---------- Lista central desde Google Sheets ----------
+     GET al mismo SHEETS_ENDPOINT del registro, que responde
+     { ok, miembros: [{ nombre, correo, ciudad, cancion, album,
+     mensaje, fecha }] } (ver codigo-apps-script-lista-miembros.gs).
+     Si la hoja devuelve miembros, esa lista es la que se muestra
+     en todos los navegadores. Si no responde, viene vacia o no
+     trae JSON valido, no se toca la lista local y no se muestra
+     ningun error. opts.conservar es un fan recien registrado que
+     se mantiene al frente si la hoja aun no lo devuelve. */
+  function miembroDesdeSheets(m){
+    if (!m || typeof m !== "object") return null;
+    var fecha = m.fecha != null ? m.fecha : (m.fechaStr || "");
+    if (typeof fecha === "string"){
+      var iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(fecha);
+      if (iso) fecha = iso[3] + "/" + iso[2] + "/" + iso[1];
+    } else if (fecha){
+      var fd = new Date(fecha);
+      if (!isNaN(fd)) fecha = ("0" + fd.getDate()).slice(-2) + "/" + ("0" + (fd.getMonth() + 1)).slice(-2) + "/" + fd.getFullYear();
+      else fecha = String(fecha);
+    }
+    var f = {
+      name: String(m.nombre || m.name || ""),
+      email: String(m.correo || m.email || ""),
+      city: String(m.ciudad || m.city || ""),
+      song: String(m.cancion || m.song || ""),
+      album: String(m.album || ""),
+      msg: String(m.mensaje || m.msg || ""),
+      fechaStr: String(fecha || "")
+    };
+    return (f.name && f.email) ? f : null;
+  }
+  function cargarMiembrosDesdeSheets(opts){
+    opts = opts || {};
+    if (!SHEETS_ENDPOINT || typeof fetch !== "function") return;
+    var conservar = opts.conservar || null;
+    fetch(SHEETS_ENDPOINT, { method: "GET" }).then(function(res){
+      if (!res) throw new Error("sin respuesta");
+      if (typeof res.json === "function") return res.json();
+      if (typeof res.text === "function") return res.text().then(function(txt){ return JSON.parse(txt); });
+      throw new Error("respuesta sin JSON");
+    }).then(function(data){
+      if (!data || data.ok === false || !Array.isArray(data.miembros)) return;
+      var remotos = [];
+      var vistos = {};
+      data.miembros.slice().reverse().forEach(function(m){
+        var f = miembroDesdeSheets(m);
+        if (!f) return;
+        var k = f.email.toLowerCase();
+        if (vistos[k]) return;
+        vistos[k] = true;
+        remotos.push(f);
+      });
+      if (!remotos.length) return;
+      if (conservar && !remotos.some(function(f){ return f.email.toLowerCase() === conservar.email.toLowerCase(); })){
+        remotos.unshift(conservar);
+      }
+      fans = remotos;
+      saveFans();
+      renderWall();
+    }).catch(function(){ /* queda la lista local como respaldo */ });
+  }
   form.addEventListener("submit", function(e){
     e.preventDefault();
     okMsg.classList.remove("show");
@@ -1012,6 +1075,7 @@
       body: JSON.stringify({ nombre:name, correo:email, ciudad:city, cancion:song, album:album, mensaje:msg, fecha:fan.fechaStr })
     }).then(function(){
       okMsg.textContent = "¡Bienvenido/a a la legión, " + name + "! Guardado en la base de Google Sheets";
+      cargarMiembrosDesdeSheets({ conservar: fan });
     }).catch(function(){
       okMsg.textContent = "¡Bienvenido/a a la legión, " + name + "! Guardado solo en este navegador (no se pudo enviar a Google Sheets)";
     });
@@ -1071,6 +1135,7 @@
   });
 
   renderWall();
+  cargarMiembrosDesdeSheets();
 })();
 </script>
 </body>
