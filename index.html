@@ -1,5 +1,9 @@
-<!doctype html>
-<!-- RAMMSTEIN FAN CLUB PLAYA DEL CARMEN — VERSION LIGERA, SIN VIDEOS DENTRO. Música: barra inferior con «This Is Rammstein» de Spotify + pantalla de entrada «ENTRAR AL CLUB».
+  
+
+
+
+  <!doctype html>
+<!-- RAMMSTEIN FAN CLUB PLAYA DEL CARMEN — VERSION LIGERA, SIN VIDEOS DENTRO. Música de fondo: audio/armee-der-tristen-live.mp3 (Armee der Tristen en vivo, MP3 local, se repite).
      Este archivo funciona solo para noticias, galeria y registro (fotos, logo y
      miniaturas van incrustadas). Para ver los 6 videos locales, crea junto a el
      una carpeta llamada  videos/  y guarda ahi tus MP4 con estos nombres:
@@ -366,9 +370,7 @@
   .cd-box{min-width:78px;border:1px solid var(--border);border-radius:10px;padding:10px 8px;background:var(--surface2)}
   .cd-box b{display:block;font-family:"Oswald",sans-serif;font-size:2rem;line-height:1;color:var(--flame)}
   .cd-box span{font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:var(--dim)}
-
-    /* ---------- Pantalla de entrada + barra de música Spotify ---------- */
-    body{padding-bottom:100px}
+/* ---------- Pantalla de entrada ---------- */
     body.gate-open{overflow:hidden}
     .gate{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#2a1a10 0%,#12100e 65%);padding:24px;transition:opacity .6s ease}
     .gate.hide{opacity:0;pointer-events:none}
@@ -379,16 +381,20 @@
     .gate-btn{background:#e02020;color:#fff;border:0;border-radius:999px;padding:16px 44px;font-family:"Oswald",sans-serif;font-size:1.25rem;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;box-shadow:0 8px 30px rgba(224,32,32,.45)}
     .gate-btn:hover{background:#b81a1a}
     .gate-note{margin:16px 0 0;font-size:.875rem;color:var(--dim)}
-    .musicbar{position:fixed;left:0;right:0;bottom:0;z-index:60;background:#1e1b18;border-top:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:8px 12px}
-    .musicbar iframe{flex:1;border:0;border-radius:12px}
-    .musicbar .mb-label{font-family:"Oswald",sans-serif;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+
+    /* ---------- Barra de música de fondo ---------- */
+    body{padding-bottom:100px}
+    .musicbar{position:fixed;left:0;right:0;bottom:0;z-index:60;background:#1e1b18;border-top:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:10px 14px}
+    .musicbar .mb-play{background:#e02020;color:#fff;border:0;border-radius:50%;width:44px;height:44px;cursor:pointer;font-size:1.1rem;line-height:1;flex:none}
+    .musicbar .mb-label{font-family:"Oswald",sans-serif;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .musicbar .mb-label small{display:block;font-family:inherit;color:var(--dim);text-transform:none;letter-spacing:0}
+    .musicbar input[type=range]{flex:1;min-width:60px;accent-color:#ff7a1a}
     .mb-hide{background:none;border:1px solid var(--border);color:var(--dim);border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:1.1rem;line-height:1;flex:none}
     .mb-fab{position:fixed;right:16px;bottom:16px;z-index:60;display:none;background:#e02020;color:#fff;border:0;border-radius:999px;padding:12px 18px;font-family:"Oswald",sans-serif;letter-spacing:.05em;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.5)}
     body.musicbar-hidden{padding-bottom:0}
     body.musicbar-hidden .musicbar{display:none}
     body.musicbar-hidden .mb-fab{display:block}
-    @media (max-width:640px){.musicbar .mb-label{display:none}.gate-logo{width:160px;height:160px}}
+    @media (max-width:640px){.musicbar .mb-label small{display:none}.musicbar input[type=range]{display:none}}
 </style>
 </head>
 <body class="gate-open">
@@ -399,7 +405,6 @@
       <h1>Rammstein Fan Club</h1>
       <p class="sub">Playa del Carmen</p>
       <button class="gate-btn" id="gate-enter" type="button">Entrar al club</button>
-      <p class="gate-note">Al entrar verás la página del club y la música oficial en Spotify, lista para darle play.</p>
     </div>
   </div>
 
@@ -1226,13 +1231,6 @@
   cargarMiembrosDesdeSheets();
 })();
 </script>
-  <!-- ---------- Barra de música: This Is Rammstein en Spotify ---------- -->
-  <div class="musicbar" id="musicbar">
-    <div class="mb-label">&#9834; Música<small>This Is Rammstein &middot; Spotify</small></div>
-    <iframe id="spotify-player" src="https://open.spotify.com/embed/playlist/37i9dQZF1DZ06evO3RbzfW?utm_source=generator&amp;theme=0" width="100%" height="80" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" title="This Is Rammstein en Spotify"></iframe>
-    <button class="mb-hide" id="musicbar-hide" type="button" aria-label="Ocultar reproductor">&times;</button>
-  </div>
-  <button class="mb-fab" id="musicbar-show" type="button">&#9834; Música</button>
   <script>
   (function(){
     var gate = document.getElementById('gate');
@@ -1244,12 +1242,60 @@
         setTimeout(function(){ gate.remove(); }, 700);
       });
     }
+  })();
+  </script>
+  <!-- ---------- Música de fondo: Armee der Tristen en vivo (audio local) ---------- -->
+  <audio id="bg-music" src="audio/armee-der-tristen-live.mp3" loop preload="none"></audio>
+  <div class="musicbar" id="musicbar">
+    <button class="mb-play" id="music-toggle" type="button" aria-label="Reproducir o pausar la música">&#9654;</button>
+    <div class="mb-label">&#9834; Armee der Tristen<small>En vivo &middot; Live in Mexico City</small></div>
+    <input id="music-vol" type="range" min="0" max="100" value="70" aria-label="Volumen de la música">
+    <button class="mb-hide" id="musicbar-hide" type="button" aria-label="Ocultar reproductor">&times;</button>
+  </div>
+  <button class="mb-fab" id="musicbar-show" type="button">&#9834; Música</button>
+  <script>
+  (function(){
+    var audio = document.getElementById('bg-music');
+    var toggle = document.getElementById('music-toggle');
+    var vol = document.getElementById('music-vol');
+    if (!audio) return;
+    audio.volume = 0.7;
+    function syncBtn(){
+      if (toggle) toggle.textContent = audio.paused ? '\u25B6' : '\u275A\u275A';
+    }
+    var enter = document.getElementById('gate-enter');
+    if (enter) {
+      enter.addEventListener('click', function(){
+        audio.play().catch(function(){});
+        syncBtn();
+      });
+    }
+    if (toggle) {
+      toggle.addEventListener('click', function(){
+        if (audio.paused) { audio.play().catch(function(){}); }
+        else { audio.pause(); }
+        syncBtn();
+      });
+    }
+    audio.addEventListener('play', syncBtn);
+    audio.addEventListener('pause', syncBtn);
+    if (vol) {
+      vol.addEventListener('input', function(){ audio.volume = vol.value / 100; });
+    }
+    /* Pausar la música cuando suena un video */
+    document.addEventListener('play', function(e){
+      if (e.target && e.target.tagName === 'VIDEO' && !audio.paused) {
+        audio.pause();
+        syncBtn();
+      }
+    }, true);
     var hideBtn = document.getElementById('musicbar-hide');
     var showBtn = document.getElementById('musicbar-show');
     if (hideBtn && showBtn) {
       hideBtn.addEventListener('click', function(){ document.body.classList.add('musicbar-hidden'); });
       showBtn.addEventListener('click', function(){ document.body.classList.remove('musicbar-hidden'); });
     }
+    syncBtn();
   })();
   </script>
 </body>
